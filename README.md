@@ -1,53 +1,76 @@
-# Friday Night Funkin' - Multiverse Collection
-Engine originally used on [Mind Games Mod](https://gamebanana.com/mods/301107), intended to be a fix for the vanilla version's many issues while keeping the casual play aspect of it. Also aiming to be an easier alternative to newbie coders.
+# 🎵 Friday Night Funkin' - Multiverse Collection
 
-# FNF - 0.6.3 - Patché
-Se code source provien bien de chez Psych Engine par Shadow Mario
-Le build a étais modifié et arangé pour le dévelopement du moteur du jeux
+Engine originally used on [Mind Games Mod](https://gamebanana.com/mods/301107), intended as a fix for the vanilla version’s many issues while keeping its casual play aspect.  
+Also aims to be an easier alternative for beginner coders.
 
-* Rangement des fichier source .Hx rangé dans des dossier "Comme la 0.7"
-* Patch d'un gros bug de shader lorrs d'utilisation de script lua pour changé les couleur de : Stage, BG, Barre de vie, etc..
+---
 
-Voila tout :>
+## 🧩 FNF - 0.6.3 - Patché
 
-## Installation du jeux:
-* Mec, comment j'installe ?
+Ce code source provient bien de **Psych Engine** par **Shadow Mario**.  
+Le build a été modifié et arrangé pour le développement du moteur du jeu.
 
-Ces très simple, tu télécharge le .bin !
-Tu l'extrait avec 7zip ou WinRar
-Et tu peux lancé ton jeux
+### 🔧 Modifications principales :
+- Rangement des fichiers sources **.hx** dans des dossiers *(comme la 0.7)*.  
+- Patch d’un gros bug de **shader** lors de l’utilisation de scripts **Lua** pour changer les couleurs du **stage**, du **background**, de la **barre de vie**, etc.
 
-## Installation et compilation du code:
-* Mais.. Comment je fais mon propre mod moi ??
+Voilà tout ! :>
 
-Alors, il te faudras plein d'outils a installé sur ta machine pour pouvoir bien modifier et compilé ton jeux !
-* Compi-quoi ?
+---
 
-Compilé, en grosomerdo, ton code que ta écris et modifier, avec tes outils
-Il vas traduire le code en version binaire
-En gros en l'anguage ordinateur "Binaire"
-Se qui vas permetre d'y joué sur tout les pc !
+## 💿 Installation du jeu
 
-## Outils de Dev et de Compilation:
-* Donne les outils, je veux compilé !
+**— Mec, comment j’installe ?**
 
-Pour la 0.6.3 il vous faudra :
+C’est très simple :
 
-- Visual Studio 2019
-Pendant l'instalation, ajouté ces composant individuel dans l'instalateur
-- MSVC v142 - VS 2019 C++ x64/x86 build tools
-- Windows SDK (10.0.17763.0)
+1. Télécharge le fichier **.bin**.  
+2. Extrait-le avec **7-Zip** ou **WinRAR**.  
+3. Lance ton jeu !
 
-Les autre outils qui on rien a voir avec Visual Studio
-- Haxe : Ver 2.5.0 "NE PAS PRENDRE AU DESSU"
-- HaxeFilxel
-- Git
+---
 
-Pour installé le reste des outils, je vous donne un Google Doc pour téléchargé la suite (https://drive.google.com/file/d/1_HoXLj_nORyT8AjnVa4I26qOAw0HTwbL/view)
+## 🧠 Installation et compilation du code
 
-## Credits:
-* Nazu, moi - Programmer
-* Dorix - Artist/Director
-* Crashy - Charting
-* Vastor - Lua Programmer
-_____________________________________
+**— Mais… comment je fais mon propre mod, moi ??**
+
+Alors, il te faudra plusieurs outils à installer sur ta machine pour bien modifier et compiler ton jeu.
+
+**— Compi-quoi ?**
+
+Compiler, en gros, c’est transformer le code que tu as écrit et modifié en une version lisible par ton PC.  
+Le code est traduit en langage **binaire**, ce qui permet d’y jouer sur tous les ordinateurs.
+
+---
+
+## ⚙️ Outils de développement et de compilation
+
+**— Donne les outils, je veux compiler !**
+
+Pour la **version 0.6.3**, il te faut :
+
+### 🪛 Visual Studio 2019
+Pendant l’installation, ajoute ces composants individuels :
+- **MSVC v142 - VS 2019 C++ x64/x86 build tools**
+- **Windows SDK (10.0.17763.0)**
+
+### 💼 Autres outils nécessaires
+- **Haxe** : version **2.5.0** *(ne pas prendre au-dessus)*  
+- **HaxeFlixel**  
+- **Git**
+
+Pour installer le reste des outils, voici un lien vers un **Google Drive** contenant tout le nécessaire :  
+👉 [Télécharger la suite](https://drive.google.com/file/d/1_HoXLj_nORyT8AjnVa4I26qOAw0HTwbL/view)
+
+---
+
+## 👥 Crédits
+
+- **Nazu (moi)** — Programmeur  
+- **Dorix** — Artiste / Directeur  
+- **Crashy** — Charting  
+- **Vastor** — Programmeur Lua  
+
+---
+
+✨ *Merci d’utiliser le moteur ! Amusez-vous bien à modder.*  
