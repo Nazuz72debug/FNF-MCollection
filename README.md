@@ -12,6 +12,7 @@ Voila tout :>
 
 ## Installation du jeux:
 * Mec, comment j'installe ?
+
 Ces très simple, tu télécharge le .bin !
 Tu l'extrait avec 7zip ou WinRar
 Et tu peux lancé ton jeux
