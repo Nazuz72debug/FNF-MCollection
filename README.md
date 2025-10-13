@@ -3,7 +3,7 @@ Engine originally used on [Mind Games Mod](https://gamebanana.com/mods/301107), 
 
 # FNF - 0.6.3 - Patché
 Se code source provien bien de chez Psych Engine par Shadow Mario
-Le build a étais modiffié et arangé pour le dévelopement du moteur du jeux
+Le build a étais modifié et arangé pour le dévelopement du moteur du jeux
 
 * Rangement des fichier source .Hx rangé dans des dossier "Comme la 0.7"
 * Patch d'un gros bug de shader lorrs d'utilisation de script lua pour changé les couleur de : Stage, BG, Barre de vie, etc..
@@ -19,7 +19,8 @@ Et tu peux lancé ton jeux
 
 ## Installation et compilation du code:
 * Mais.. Comment je fais mon propre mod moi ??
-Alors, il te faudras plein d'outils a installé sur ta machine pour pouvoir bien modfifier et compilé ton jeux !
+
+Alors, il te faudras plein d'outils a installé sur ta machine pour pouvoir bien modifier et compilé ton jeux !
 * Compi-quoi ?
 
 Compilé, en grosomerdo, ton code que ta écris et modifier, avec tes outils
