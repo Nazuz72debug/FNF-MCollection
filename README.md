@@ -17,20 +17,20 @@ Tu l'extrait avec 7zip ou WinRar
 Et tu peux lancé ton jeux
 
 ## Installation et compilation du code:
-*Mais.. Comment je fais mon propre mod moi ??
+* Mais.. Comment je fais mon propre mod moi ??
 Alors, il te faudras plein d'outils a installé sur ta machine pour pouvoir bien modfifier et compilé ton jeux !
-*Compi-quoi ?
+* Compi-quoi ?
 Compilé, en grosomerdo, ton code que ta écris et modifier, avec tes outils, il vas traduire le code en version binaire
 En gros en l'anguage ordinateur "Binaire"
 Se qui vas permetre d'y joué sur tout les pc !
 
 ## Outils de Dev et de Compilation:
-*Donne les outils, je veux compilé !
+* Donne les outils, je veux compilé !
 
 Pour la 0.6.3 il vous faudra :
 
 - Visual Studio 2019
-*Pendant l'instalation, ajouté ces composant individuel dans l'instalateur
+* Pendant l'instalation, ajouté ces composant individuel dans l'instalateur
 - MSVC v142 - VS 2019 C++ x64/x86 build tools
 - Windows SDK (10.0.17763.0)
 - Haxe : Ver 2.5.0 "NE PAS PRENDRE AU DESSU"
