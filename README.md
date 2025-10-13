@@ -30,6 +30,9 @@ Se qui vas permetre d'y joué sur tout les pc !
 Pour la 0.6.3 il vous faudra :
 
 - Visual Studio 2019
+*Pendant l'instalation, ajouté ces composant individuel dans l'instalateur
+- MSVC v142 - VS 2019 C++ x64/x86 build tools
+- Windows SDK (10.0.17763.0)
 - Haxe : Ver 2.5.0 "NE PAS PRENDRE AU DESSU"
 - HaxeFilxel
 
