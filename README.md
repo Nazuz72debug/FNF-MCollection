@@ -20,6 +20,7 @@ Et tu peux lancé ton jeux
 * Mais.. Comment je fais mon propre mod moi ??
 Alors, il te faudras plein d'outils a installé sur ta machine pour pouvoir bien modfifier et compilé ton jeux !
 * Compi-quoi ?
+
 Compilé, en grosomerdo, ton code que ta écris et modifier, avec tes outils, il vas traduire le code en version binaire
 En gros en l'anguage ordinateur "Binaire"
 Se qui vas permetre d'y joué sur tout les pc !
