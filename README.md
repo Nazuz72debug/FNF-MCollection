@@ -73,4 +73,4 @@ Pour installer le reste des outils, voici un lien vers un **Google Drive** conte
 
 ---
 
-✨ *Merci d’utiliser le moteur ! Amusez-vous bien à modder.*  
+✨ *Merci de joué au jeux ! Amusez-vous bien.*  
