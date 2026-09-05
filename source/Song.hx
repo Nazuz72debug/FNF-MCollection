@@ -19,6 +19,7 @@ typedef SwagSong =
 	var events:Array<Dynamic>;
 	var bpm:Float;
 	var needsVoices:Bool;
+	var needsInstrumental:Bool;
 	var speed:Float;
 
 	var player1:String;
@@ -38,6 +39,7 @@ class Song
 	public var events:Array<Dynamic>;
 	public var bpm:Float;
 	public var needsVoices:Bool = true;
+	public var needsInstrumental:Bool = true;
 	public var arrowSkin:String;
 	public var splashSkin:String;
 	public var speed:Float = 1;
@@ -52,6 +54,11 @@ class Song
 		{
 			songJson.gfVersion = songJson.player3;
 			songJson.player3 = null;
+		}
+
+		if(songJson.needsInstrumental == null)
+		{
+			songJson.needsInstrumental = true;
 		}
 
 		if(songJson.events == null)

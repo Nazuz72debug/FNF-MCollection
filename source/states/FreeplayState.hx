@@ -88,10 +88,15 @@ class FreeplayState extends MusicBeatState
 	// Ex : "Periple" -> data/periple/ -> clé 'periple' -> HellBG
 	// ==============================================
 	static var hardcodedBackgrounds:Map<String, String> = [
-		'periple' => 'freeplayBG/defaultBG',
-		'starlight' => 'freeplayBG/defaultBG',
+		'periple' => 'freeplayBG/periple',
 		'allocution' => 'freeplayBG/allocution',
+		'crash-out' => 'freeplayBG/crash_out',
 		'new-game' => 'freeplayBG/new_game',
+		'criminal-targets' => 'freeplayBG/criminal_targets',
+		'how-to-play' => 'freeplayBG/how_to_play',
+		'metal-reflection' => 'freeplayBG/metal_reflection',
+		'gangstabattle' => 'freeplayBG/gangstabattle',
+		'starlight' => 'freeplayBG/starlight',
 		// 'nom-de-la-chanson' => 'NomDuFond',
 	];
 
@@ -174,7 +179,17 @@ for (i in 0...WeekData.weeksList.length) {
 					}
 				}
 
-				addSong(song[0], i, song[1], FlxColor.fromRGB(colors[0], colors[1], colors[2]), diffIcons);
+				// 5e élément optionnel : liste de difficultés propre à CETTE chanson
+				// (même format que week.difficulties : "Easy,Normal,Hard,Erect,..."),
+				// utilisée uniquement en Freeplay. Si absent, on retombe sur
+				// week.difficulties (donc Easy/Normal/Hard par défaut).
+				var songDifficulties:String = null;
+				if(song.length > 4 && song[4] != null)
+				{
+					songDifficulties = Std.string(song[4]);
+				}
+
+				addSong(song[0], i, song[1], FlxColor.fromRGB(colors[0], colors[1], colors[2]), diffIcons, songDifficulties);
 			}
 		}
 		WeekData.loadTheFirstEnabledMod();
@@ -341,9 +356,9 @@ for (i in 0...WeekData.weeksList.length) {
 		super.closeSubState();
 	}
 
-	public function addSong(songName:String, weekNum:Int, songCharacter:String, color:Int, ?diffIcons:Map<String, String>)
+	public function addSong(songName:String, weekNum:Int, songCharacter:String, color:Int, ?diffIcons:Map<String, String>, ?songDifficulties:String)
 	{
-		songs.push(new SongMetadata(songName, weekNum, songCharacter, color, diffIcons));
+		songs.push(new SongMetadata(songName, weekNum, songCharacter, color, diffIcons, songDifficulties));
 	}
 
 	function weekIsLocked(name:String):Bool {
@@ -658,6 +673,8 @@ if (trackKey != instNamePlaying)
 
 		if (targetTrack == "new game" || targetTrack == "new-game")
 			FlxG.sound.music.time = 23170;
+		if (targetTrack == "crash out" || targetTrack == "crash-out")
+			FlxG.sound.music.time = 330;
 		if (targetTrack == "metal reflection" || targetTrack == "metal-reflection")
 			FlxG.sound.music.time = 7500;
 
@@ -739,8 +756,15 @@ if (trackKey != instNamePlaying)
 	// pour compter le nombre de difficultés propres à une week donnée (ici "weeka").
 function getDifficultiesForWeek(week:WeekData):Array<String>
 	{
+		return parseDifficultiesString(week.difficulties);
+	}
+
+	// Parse une chaîne "Easy,Normal,Hard,Erect,..." en tableau de difficultés.
+	// Retourne CoolUtil.defaultDifficulties si la chaîne est vide/nulle.
+	// Utilisée pour les difficultés de Week (compat) ET de chanson (nouveau).
+	function parseDifficultiesString(diffStr:String):Array<String>
+	{
 		var diffs:Array<String> = CoolUtil.defaultDifficulties.copy();
-		var diffStr:String = week.difficulties;
 		if(diffStr != null) diffStr = diffStr.trim();
 
 		if(diffStr != null && diffStr.length > 0)
@@ -817,7 +841,7 @@ function getDifficultiesForWeek(week:WeekData):Array<String>
 			intendedRating = Highscore.getRating(songs[curSelected].songName, curDifficulty);
 			#end
 
-			FlxG.sound.play(Paths.sound('victoire'), 0.3);
+			FlxG.sound.play(Paths.sound('victoire'), 0.4);
 			cheatBuffer = "";
 
 			// Affiche le message de confirmation, puis revient au message d'astuce
@@ -909,28 +933,23 @@ function getDifficultiesForWeek(week:WeekData):Array<String>
 		Paths.currentModDirectory = songs[curSelected].folder;
 		PlayState.storyWeek = songs[curSelected].week;
 
-		CoolUtil.difficulties = CoolUtil.defaultDifficulties.copy();
-		var diffStr:String = WeekData.getCurrentWeek().difficulties;
-		if(diffStr != null) diffStr = diffStr.trim(); //Fuck you HTML5
+		// Difficultés spécifiques à CETTE chanson en priorité (5e élément du song[] JSON),
+		// mais UNIQUEMENT si la Week à laquelle appartient la chanson a déjà été
+		// terminée au moins une fois en Story Mode (StoryMenuState.weekCompleted).
+		// Tant que ce n'est pas le cas, on retombe sur week.difficulties (donc
+		// Easy/Normal/Hard, comme en Story Mode) même si la chanson définit des
+		// difficultés supplémentaires.
+		var songDiffStr:String = songs[curSelected].difficulties;
+		var weekFileName:String = WeekData.weeksList[songs[curSelected].week];
+		var weekAlreadyCompleted:Bool = StoryMenuState.weekCompleted.exists(weekFileName) && StoryMenuState.weekCompleted.get(weekFileName);
 
-		if(diffStr != null && diffStr.length > 0)
+		if(songDiffStr != null && songDiffStr.trim().length > 0 && weekAlreadyCompleted)
 		{
-			var diffs:Array<String> = diffStr.split(',');
-			var i:Int = diffs.length - 1;
-			while (i > 0)
-			{
-				if(diffs[i] != null)
-				{
-					diffs[i] = diffs[i].trim();
-					if(diffs[i].length < 1) diffs.remove(diffs[i]);
-				}
-				--i;
-			}
-
-			if(diffs.length > 0 && diffs[0].length > 0)
-			{
-				CoolUtil.difficulties = diffs;
-			}
+			CoolUtil.difficulties = parseDifficultiesString(songDiffStr);
+		}
+		else
+		{
+			CoolUtil.difficulties = parseDifficultiesString(WeekData.getCurrentWeek().difficulties);
 		}
 
 		if(CoolUtil.difficulties.contains(CoolUtil.defaultDifficulty))
@@ -968,8 +987,9 @@ class SongMetadata
 	public var color:Int = -7179779;
 	public var folder:String = "";
 	public var difficultyIcons:Map<String, String> = new Map(); // Icônes par difficulté
+	public var difficulties:String = ''; // Difficultés propres à cette chanson (Freeplay uniquement)
 
-	public function new(song:String, week:Int, songCharacter:String, color:Int, ?diffIcons:Map<String, String>)
+	public function new(song:String, week:Int, songCharacter:String, color:Int, ?diffIcons:Map<String, String>, ?songDifficulties:String)
 	{
 		this.songName = song;
 		this.week = week;
@@ -978,5 +998,6 @@ class SongMetadata
 		this.folder = Paths.currentModDirectory;
 		if(this.folder == null) this.folder = '';
 		if(diffIcons != null) this.difficultyIcons = diffIcons;
+		if(songDifficulties != null) this.difficulties = songDifficulties;
 	}
 }

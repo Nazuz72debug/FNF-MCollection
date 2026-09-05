@@ -324,6 +324,14 @@ class PlayState extends MusicBeatState
 	private var controlArray:Array<String>;
 
 	var precacheList:Map<String, String> = new Map<String, String>();
+
+	// Smart preload/cache state. Videos and current-song audio are warmed before
+	// the first countdown/cutscene so Lua events do not do heavy I/O on the beat.
+	private var preloadedVideoNames:Map<String, Bool> = new Map<String, Bool>();
+	private var songPreloadDone:Bool = false;
+	#if VIDEOS_ALLOWED
+	private var currentVideo:MP4Handler = null;
+	#end
 	
 	// stores the last judgement object
 	public static var lastRating:FlxSprite;
@@ -335,7 +343,11 @@ class PlayState extends MusicBeatState
 	override public function create()
 	{
 		//trace('Playback Rate: ' + playbackRate);
+		// Release leftovers from the previous state BEFORE we start building the new song.
+		// Do not call clearUnusedMemory after the current-song preload: doing so can evict
+		// freshly warmed assets (especially video/audio caches depending on the Paths impl).
 		Paths.clearStoredMemory();
+		Paths.clearUnusedMemory();
 
 		// for lua
 		instance = this;
@@ -1292,6 +1304,9 @@ class PlayState extends MusicBeatState
 		}
 		#end
 
+		// Critical order: warm Lua/media BEFORE any story intro or countdown can trigger them.
+		preloadCurrentSongAssets();
+
 		var daSong:String = Paths.formatToSongPath(curSong);
 		if (isStoryMode && !seenCutscene)
 		{
@@ -1398,20 +1413,9 @@ class PlayState extends MusicBeatState
 
 		cacheCountdown();
 		cachePopUpScore();
-		for (key => type in precacheList)
-		{
-			//trace('Key $key is type $type');
-			switch(type)
-			{
-				case 'image':
-					Paths.image(key);
-				case 'sound':
-					Paths.sound(key);
-				case 'music':
-					Paths.music(key);
-			}
-		}
-		Paths.clearUnusedMemory();
+
+		// Second pass: intros/dialogue/events may have added more cache entries. Keep them warm.
+		flushPrecacheList();
 		
 		CustomFadeTransition.nextCamera = camOther;
 	}
@@ -1613,6 +1617,120 @@ class PlayState extends MusicBeatState
 		return null;
 	}
 
+	/**
+	 * Flushes the current precache map. This is intentionally reusable because
+	 * cutscenes/events may append additional sounds after the first preload pass.
+	 */
+	private function flushPrecacheList():Void
+	{
+		for (key => type in precacheList)
+		{
+			switch(type)
+			{
+				case 'image':
+					Paths.image(key);
+				case 'sound':
+					Paths.sound(key);
+				case 'music':
+					Paths.music(key);
+				case 'video':
+					precacheVideo(key);
+			}
+		}
+	}
+
+	#if (LUA_ALLOWED && sys)
+	/**
+	 * Reads literal media calls in already-loaded Lua scripts. This automatically
+	 * warms videos/sounds/music requested later by song scripts without loading every
+	 * image from every global script into RAM.
+	 */
+	private function preloadLuaReferencedAssets():Void
+	{
+		var seenScripts:Map<String, Bool> = new Map<String, Bool>();
+
+		for (lua in luaArray)
+		{
+			if(lua == null || lua.scriptName == null || lua.scriptName.length == 0)
+				continue;
+
+			if(seenScripts.exists(lua.scriptName))
+				continue;
+			seenScripts.set(lua.scriptName, true);
+
+			if(!FileSystem.exists(lua.scriptName))
+				continue;
+
+			var source:String;
+			try
+			{
+				source = File.getContent(lua.scriptName);
+			}
+			catch(e:Dynamic)
+			{
+				trace('[PRELOAD] Could not read Lua: ' + lua.scriptName);
+				continue;
+			}
+
+			preloadLuaLiteralCalls(source, ['precacheVideo', 'startVideo', 'playVideo'], 'video');
+			preloadLuaLiteralCalls(source, ['playSound', 'precacheSound', 'Paths.sound'], 'sound');
+			preloadLuaLiteralCalls(source, ['playMusic', 'precacheMusic', 'Paths.music'], 'music');
+		}
+	}
+
+	private function preloadLuaLiteralCalls(source:String, functionNames:Array<String>, assetType:String):Void
+	{
+		for (functionName in functionNames)
+		{
+			var expression:EReg = new EReg(functionName + "\\s*\\(\\s*[\"']([^\"']+)[\"']", 'g');
+			var remaining:String = source;
+
+			while(expression.match(remaining))
+			{
+				var assetName:String = expression.matched(1);
+				if(assetName != null && assetName.length > 0)
+				{
+					switch(assetType)
+					{
+						case 'video':
+							precacheVideo(assetName);
+						case 'sound' | 'music':
+							if(!precacheList.exists(assetName))
+								precacheList.set(assetName, assetType);
+					}
+				}
+
+				remaining = expression.matchedRight();
+			}
+		}
+	}
+	#elseif LUA_ALLOWED
+	private function preloadLuaReferencedAssets():Void {}
+	#end
+
+	/**
+	 * Warm only the current song and its Lua-requested media BEFORE any intro/countdown.
+	 */
+	private function preloadCurrentSongAssets():Void
+	{
+		if(songPreloadDone)
+			return;
+
+		var songName:String = Paths.formatToSongPath(SONG.song);
+		var diffSuffix:String = Paths.songDiffSuffix(PlayState.SONG, PlayState.storyDifficulty);
+
+		// Warm the actual current-song streams. Do not create throw-away FlxSound objects.
+		Paths.inst(PlayState.SONG.song, diffSuffix);
+		if(SONG.needsVoices)
+			Paths.voices(PlayState.SONG.song, diffSuffix);
+
+		preloadLuaReferencedAssets();
+		flushPrecacheList();
+
+		songPreloadDone = true;
+		trace('[PRELOAD] Current song assets ready: ' + songName);
+	}
+
 	function startCharacterPos(char:Character, ?gfCheck:Bool = false) {
 		if(gfCheck && char.curCharacter.startsWith('gf')) { //IF DAD IS GIRLFRIEND, HE GOES TO HER POSITION
 			char.setPosition(GF_X, GF_Y);
@@ -1631,7 +1749,15 @@ class PlayState extends MusicBeatState
 	public function precacheVideo(name:String)
 	{
 		#if (VIDEOS_ALLOWED && sys)
+		if(name == null || name.length == 0)
+			return;
+
+		if(preloadedVideoNames.exists(name))
+			return;
+
 		Paths.preloadVideo(name);
+		preloadedVideoNames.set(name, true);
+		trace('[PRELOAD] Video ready: ' + name);
 		#end
 	}
 
@@ -1639,6 +1765,10 @@ class PlayState extends MusicBeatState
 	{
 		#if VIDEOS_ALLOWED
 		inCutscene = true;
+
+		// Safety net for dynamic Lua names. Literal video calls are already warmed before
+		// the countdown/cutscene by preloadLuaReferencedAssets().
+		precacheVideo(name);
 
 		var filepath:String = Paths.video(name);
 		#if sys
@@ -1653,12 +1783,16 @@ class PlayState extends MusicBeatState
 		}
 
 		var video:MP4Handler = new MP4Handler();
-		video.playVideo(filepath);
+		currentVideo = video;
 		video.finishCallback = function()
 		{
+			if(currentVideo == video)
+				currentVideo = null;
 			startAndEnd();
 			return;
-		}
+		};
+
+		video.playVideo(filepath);
 		#else
 		FlxG.log.warn('Platform not supported!');
 		startAndEnd();
@@ -2398,7 +2532,10 @@ class PlayState extends MusicBeatState
 		previousFrameTime = FlxG.game.ticks;
 		lastReportedPlayheadPosition = 0;
 
-		FlxG.sound.playMusic(Paths.inst(PlayState.SONG.song, Paths.songDiffSuffix(PlayState.SONG, PlayState.storyDifficulty)), 1, false);
+		// Late safety net. Normally the song is already fully warmed before countdown.
+		preloadCurrentSongAssets();
+
+		FlxG.sound.playMusic(Paths.inst(PlayState.SONG.song, Paths.songDiffSuffix(PlayState.SONG, PlayState.storyDifficulty)), (SONG.needsInstrumental ? 1 : 0), false);
 		FlxG.sound.music.pitch = playbackRate;
 		FlxG.sound.music.onComplete = finishSong.bind();
 		vocals.play();
@@ -2466,7 +2603,9 @@ else
 
 vocals.pitch = playbackRate;
 FlxG.sound.list.add(vocals);
-FlxG.sound.list.add(new FlxSound().loadEmbedded(Paths.inst(PlayState.SONG.song, Paths.songDiffSuffix(PlayState.SONG, PlayState.storyDifficulty))));
+// Instrumental is warmed through Paths during preloadCurrentSongAssets();
+		// Do not create a second throw-away FlxSound here.
+		
 
 		notes = new FlxTypedGroup<Note>();
 		add(notes);
@@ -2518,8 +2657,9 @@ if (OpenFlAssets.exists(file)) {
 			for (i in 0...event[1].length)
 			{
 				var newEventNote:Array<Dynamic> = [event[0], event[1][i][0], event[1][i][1], event[1][i][2]];
+				var eventOffset:Float = (newEventNote[1] == 'playsound') ? 0 : ClientPrefs.noteOffset; // Ignore noteOffset for playsound events
 				var subEvent:EventNote = {
-					strumTime: newEventNote[0] + ClientPrefs.noteOffset,
+					strumTime: newEventNote[0] + eventOffset,
 					event: newEventNote[1],
 					value1: newEventNote[2],
 					value2: newEventNote[3]
@@ -3236,6 +3376,33 @@ if (OpenFlAssets.exists(file)) {
 		}
 		#end
 
+		// ========================================================================
+		// CHEAT DE TEST TEMPORAIRE — À SUPPRIMER une fois les tests terminés.
+		// Touche "3" : termine la chanson instantanément avec un score de 100%.
+		// Pour le retirer : supprimer tout ce bloc (entre les lignes de ===).
+		// ========================================================================
+		if(!endingSong && !startingSong) {
+			if (FlxG.keys.justPressed.THREE) {
+				// Force le pourcentage de réussite à 100%, quel que soit ce qui a
+				// été joué jusque-là (évite aussi la division par zéro si aucune
+				// note n'a encore été jouée).
+				totalPlayed = Std.int(Math.max(totalPlayed, 1));
+				totalNotesHit = totalPlayed;
+				ratingPercent = 1;
+
+				// Supprime les notes restantes pour éviter toute perte de vie
+				// résiduelle au moment de terminer la chanson.
+				KillNotes();
+
+				// Déclenche la fin de chanson comme si l'instru était arrivée à
+				// son terme (c'est ce qu'utilise déjà le cheat "1" ci-dessus).
+				FlxG.sound.music.onComplete();
+			}
+		}
+		// ========================================================================
+		// FIN DU CHEAT DE TEST TEMPORAIRE
+		// ========================================================================
+
 		setOnLuas('cameraX', camFollowPos.x);
 		setOnLuas('cameraY', camFollowPos.y);
 		setOnLuas('botPlay', cpuControlled);
@@ -3830,10 +3997,20 @@ if (SONG.validScore)
 						camHUD.visible = false;
 
 						FlxG.sound.play(Paths.sound('Lights_Shut_off'));
-					}
 
-					FlxTransitionableState.skipNextTransIn = true;
-					FlxTransitionableState.skipNextTransOut = true;
+						// Cas spécial : l'écran noir géré manuellement ci-dessus fait déjà
+						// office de transition, donc on continue de sauter le fondu standard
+						// pour éviter d'empiler deux effets différents.
+						FlxTransitionableState.skipNextTransIn = true;
+						FlxTransitionableState.skipNextTransOut = true;
+					}
+					else
+					{
+						// Laisse le fondu standard (CustomFadeTransition) s'afficher
+						// entre deux chansons, au lieu de couper brutalement.
+						FlxTransitionableState.skipNextTransIn = false;
+						FlxTransitionableState.skipNextTransOut = false;
+					}
 
 					prevCamFollow = camFollow;
 					prevCamFollowPos = camFollowPos;
@@ -4753,6 +4930,17 @@ if (SONG.validScore)
 	}
 
 	override function destroy() {
+		#if VIDEOS_ALLOWED
+		currentVideo = null;
+		#end
+
+		if(vocals != null)
+		{
+			vocals.stop();
+			FlxG.sound.list.remove(vocals, true);
+			vocals = null;
+		}
+
 		for (lua in luaArray) {
 			lua.call('onDestroy', []);
 			lua.stop();
@@ -4770,6 +4958,14 @@ if (SONG.validScore)
 		}
 		FlxAnimationController.globalSpeed = 1;
 		FlxG.sound.music.pitch = 1;
+
+		preloadedVideoNames.clear();
+		precacheList.clear();
+		songPreloadDone = false;
+
+		// Free assets on state exit, not immediately after preload.
+		Paths.clearUnusedMemory();
+
 		super.destroy();
 	}
 

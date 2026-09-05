@@ -639,7 +639,7 @@ class WeekEditorFreeplayState extends MusicBeatState
 			{name: 'Freeplay', label: 'Freeplay'},
 		];
 		UI_box = new FlxUITabMenu(null, tabs, true);
-		UI_box.resize(250, 200);
+		UI_box.resize(250, 240);
 		UI_box.x = FlxG.width - UI_box.width - 100;
 		UI_box.y = FlxG.height - UI_box.height - 60;
 		UI_box.scrollFactor.set();
@@ -722,7 +722,15 @@ class WeekEditorFreeplayState extends MusicBeatState
 			}
 		});
 
-		iconInputText = new FlxUIInputText(10, bgColorStepperR.y + 70, 100, '', 8);
+		var getIconColor:FlxButton = new FlxButton(10, copyColor.y + 25, "Get Icon Color", function() {
+			var coolColor = FlxColor.fromInt(CoolUtil.dominantColor(iconArray[curSelected]));
+			bgColorStepperR.value = coolColor.red;
+			bgColorStepperG.value = coolColor.green;
+			bgColorStepperB.value = coolColor.blue;
+			updateBG();
+		});
+
+		iconInputText = new FlxUIInputText(10, getIconColor.y + 55, 100, '', 8);
 
 		var hideFreeplayCheckbox:FlxUICheckBox = new FlxUICheckBox(10, iconInputText.y + 30, null, null, "Hide Week from Freeplay?", 100);
 		hideFreeplayCheckbox.checked = weekFile.hideFreeplay;
@@ -738,6 +746,7 @@ class WeekEditorFreeplayState extends MusicBeatState
 		tab_group.add(bgColorStepperB);
 		tab_group.add(copyColor);
 		tab_group.add(pasteColor);
+		tab_group.add(getIconColor);
 		tab_group.add(iconInputText);
 		tab_group.add(hideFreeplayCheckbox);
 		UI_box.addGroup(tab_group);

@@ -41,14 +41,14 @@ class GalleryState extends MusicBeatState {
 
     override function create() {
         super.create();
-        
+
         // Initialisation des tableaux
         images = [];
         musics = [];
 
         FlxG.mouse.visible = true;
 
-        FlxG.sound.playMusic(Paths.music("betamusic"), 0.8, true); 
+        FlxG.sound.playMusic(Paths.music("ludum_dare_prototype"), 0.8, true);
 
         bg = new FlxSprite().loadGraphic(Paths.image('menuDesat'));
         bg.color = 0xFF000000;
@@ -66,17 +66,13 @@ class GalleryState extends MusicBeatState {
         add(musicTab);
 
         // --- Tes données originales ---
-        addImage("Sketch of Markiplier", "gallery/conceptmark", 0xFFFFFFFF);
-        addImage("Artwork Metal Mario", "gallery/artworkmetal", 0xFF919191);
-        addImage("Sketch of Metal Mario Idle", "gallery/sketchmetal", 0xFF919191);
-        addImage("Artwork Thatou", "gallery/artworkthatou", 0xFFC200A8);
-        addImage("Sketch of Thatou", "gallery/sketchthatou", 0xFFFFFFFF);
-        addImage("Originally, Metal Reflection had a percentage system inspired by the original Super Smash Bros.
-        When the opponent sang, our percentage would increase.
-        If the player had 300%, he would die.
-        A good accuracy would reduce the received percentage.
-        The mechanic ended up being scrapped, as it seemed too complex and poorly balanced.", "gallery/metalconcept", 0xFFFFFFFF, 0, 575, 17);
-        addImage("?", "gallery/placeholder", 0xFFFFFFFF);
+        addImage("Sketch of Markiplier (by Dorix)", "conceptmark", 0xFFFFFFFF);
+        addImage("Artwork Metal Mario (by Dorix)", "artworkmetal", 0xFF919191);
+        addImage("Sketch of Metal Mario Idle (by Dorix)", "sketchmetal", 0xFF919191);
+        addImage("Artwork Océane (by Dorix)", "artworkthatou", 0xFFC200A8);
+        addImage("Sketch of Océane (by Thatou)", "sketchthatou", 0xFFFFFFFF);
+        addImage("Originally, Metal Reflection had a percentage system inspired by the original Super Smash Bros.\nWhen the opponent sang, our percentage would increase.\nIf the player had 300%, he would die.\nA good accuracy would reduce the received percentage.\nThe mechanic ended up being scrapped, as it seemed too complex and poorly balanced.", "metalconcept", 0xFFFFFFFF, 0, 575, 17);
+        addImage("?", "placeholder", 0xFFFFFFFF);
 
         addMusic("Concept_Tes.ogg", "tes", "0:56");
         addMusic("Concept_TrickorTreating.ogg", "dokis", "0:32");
@@ -88,7 +84,7 @@ class GalleryState extends MusicBeatState {
         imageDisplay.screenCenter();
         add(imageDisplay);
 
-        nameText = new FlxText(0, FlxG.height - 800, FlxG.width, "", 32);
+        nameText = new FlxText(0, FlxG.height - 80, FlxG.width, "", 32);
         nameText.setFormat(Paths.font("vcr.ttf"), 32, FlxColor.WHITE, CENTER);
         add(nameText);
 
@@ -132,8 +128,11 @@ class GalleryState extends MusicBeatState {
         var back = controls.BACK;
         var space = FlxG.keys.justPressed.SPACE;
 
-        if (FlxG.mouse.justPressed && imagesTab.overlapsPoint(FlxG.mouse.getWorldPosition())) switchCategory("Images");
-        if (FlxG.mouse.justPressed && musicTab.overlapsPoint(FlxG.mouse.getWorldPosition())) switchCategory("Music");
+        if (FlxG.mouse.justPressed) {
+            var mousePos = FlxG.mouse.getWorldPosition();
+            if (imagesTab.overlapsPoint(mousePos)) switchCategory("Images");
+            if (musicTab.overlapsPoint(mousePos)) switchCategory("Music");
+        }
 
         if (curCategory == "Images") {
             if (left) changeSelection(-1);
@@ -183,7 +182,7 @@ class GalleryState extends MusicBeatState {
         timeText.visible = isMusic;
 
         if (cat == "Images") {
-            if (audioPlayer != null && audioPlayer.playing) {
+            if (audioPlayer != null) {
                 FlxTween.cancelTweensOf(audioPlayer);
                 audioPlayer.stop();
                 audioPlayer.destroy();
@@ -204,6 +203,13 @@ class GalleryState extends MusicBeatState {
         images.push(new GalleryImage(name, path, color, textX, textY, textSize));
     }
 
+    // Le dossier "gallery" est à la racine de assets/, pas dans assets/images/,
+    // donc on ne peut pas passer par Paths.image() qui ajoute toujours "images/" devant.
+    // On construit le chemin nous-même à la place.
+    function galleryImagePath(key:String):String {
+        return Paths.getPath('gallery/images/' + key + '.png', IMAGE);
+    }
+
     function changeSelection(change:Int = 0) {
         curSelected += change;
         if (curSelected < 0) curSelected = images.length - 1;
@@ -211,8 +217,8 @@ class GalleryState extends MusicBeatState {
 
         var img = images[curSelected];
         imageDisplay.visible = true;
-        imageDisplay.loadGraphic(Paths.image(img.path));
-        imageDisplay.scale.set(0.5, 0.5); 
+        imageDisplay.loadGraphic(galleryImagePath(img.path));
+        imageDisplay.scale.set(0.5, 0.5);
         imageDisplay.updateHitbox();
         imageDisplay.screenCenter();
 
@@ -221,7 +227,7 @@ class GalleryState extends MusicBeatState {
         if (img.textY >= 0) nameText.y = img.textY; else nameText.y = FlxG.height - 64;
         nameText.text = img.name;
         nameText.setFormat(Paths.font("vcr.ttf"), img.textSize, FlxColor.WHITE, CENTER);
-        
+
         if (img.color != intendedColor) {
             if (colorTween != null) colorTween.cancel();
             intendedColor = img.color;
@@ -241,7 +247,7 @@ class GalleryState extends MusicBeatState {
         if (curSelected >= musics.length) curSelected = 0;
 
         var mus = musics[curSelected];
-        imageDisplay.visible = false; 
+        imageDisplay.visible = false;
         nameText.text = "Music : " + mus.name;
 
         if (audioPlayer != null) {
@@ -251,7 +257,6 @@ class GalleryState extends MusicBeatState {
             audioPlayer = null;
         }
 
-        var mus = musics[curSelected];
         progressBar.scale.x = 0;
         timeText.text = "0:00 / " + mus.duration;
 
@@ -269,7 +274,7 @@ class GalleryState extends MusicBeatState {
         } else {
             var mus = musics[curSelected];
             if (audioPlayer != null) { FlxTween.cancelTweensOf(audioPlayer); audioPlayer.destroy(); }
-            var filePath:String = Paths.getPath('images/gallery/music/' + mus.file + '.ogg', SOUND);
+            var filePath:String = Paths.getPath('gallery/music/' + mus.file + '.ogg', SOUND);
             audioPlayer = new FlxSound().loadEmbedded(filePath, false, false);
             FlxG.sound.list.add(audioPlayer);
             audioPlayer.play();

@@ -404,7 +404,7 @@ inline static public function inst(song:String, ?diffSuffix:String = ''):Any
 			localTrackedAssets.push(path);
 			return currentTrackedAssets.get(path);
 		}
-		trace('Fais chier, ce con il et null, null germain');
+		trace('Fais chier, ce con il est nul, nul germain');
 		return null;
 	}
 
