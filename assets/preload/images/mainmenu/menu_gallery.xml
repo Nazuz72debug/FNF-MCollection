@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextureAtlas imagePath="menu_gallery.png">
+	<!-- Created using the Spritesheet and XML generator -->
+	<!-- https://uncertainprod.github.io/FNF-Spritesheet-XML-generator-Web -->
+	<SubTexture name="idle0000" x="790" y="259" width="735" height="247" frameX="-593" frameY="-452" frameWidth="1920" frameHeight="1080"/>
+	<SubTexture name="idle0001" x="790" y="0" width="746" height="259" frameX="-587" frameY="-446" frameWidth="1920" frameHeight="1080"/>
+	<SubTexture name="select0000" x="790" y="259" width="735" height="247" frameX="-593" frameY="-452" frameWidth="1920" frameHeight="1080"/>
+	<SubTexture name="select0001" x="0" y="310" width="762" height="276" frameX="-579" frameY="-438" frameWidth="1920" frameHeight="1080"/>
+	<SubTexture name="confirm0000" x="790" y="259" width="735" height="247" frameX="-593" frameY="-452" frameWidth="1920" frameHeight="1080"/>
+	<SubTexture name="confirm0001" x="790" y="0" width="746" height="259" frameX="-587" frameY="-446" frameWidth="1920" frameHeight="1080"/>
+	<SubTexture name="confirm0002" x="0" y="310" width="762" height="276" frameX="-579" frameY="-438" frameWidth="1920" frameHeight="1080"/>
+	<SubTexture name="confirm0003" x="0" y="0" width="790" height="310" frameX="-565" frameY="-421" frameWidth="1920" frameHeight="1080"/>
+</TextureAtlas>

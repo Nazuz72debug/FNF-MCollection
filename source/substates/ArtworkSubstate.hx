@@ -109,8 +109,8 @@ class ArtworkSubstate extends FlxSubState {
             difficulties: [3,6,10],          diffLabels: ["Easy", "Normal", "Hard"],
             difficultyArtworks: null,        difficultyTexts: null,        difficultyDescs: null },
 
-        {   path: "artworks/placeholder",            text: "BF who wouldn't even reach his ankle.",
-            desc: "BPM: 147 > ??? / VS. Isabelle",
+        {   path: "artworks/placeholder",            text: "tiny guy",
+            desc: "BPM: 163 / VS. Mary",
             difficulties: [3,7,12],          diffLabels: ["Easy", "Normal", "Hard"],
             difficultyArtworks: null,        difficultyTexts: null,        difficultyDescs: null },
 
@@ -152,11 +152,11 @@ class ArtworkSubstate extends FlxSubState {
 
         barMaxWidth = Std.int(bg.width - 120);
 
-        barBg = new FlxSprite(bg.x + 45, 100)
+        barBg = new FlxSprite(bg.x + 45, 110)
             .makeGraphic(barMaxWidth, 20, FlxColor.fromRGB(40, 40, 40));
         add(barBg);
 
-        barFill = new FlxSprite(bg.x + 45, 100)
+        barFill = new FlxSprite(bg.x + 45, 110)
             .makeGraphic(1, 20, FlxColor.GREEN);
         add(barFill);
 

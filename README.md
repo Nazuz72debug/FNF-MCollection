@@ -88,7 +88,7 @@ Si tu galères sur les outils ou la compilation du moteur, tout le nécessaire e
 
 ## Crédits
 
-- **Nazu (moi)** — Programmeur / Compositeur
+- **Nanza (moi)** — Programmeur / Compositeur
 - **Dorix** — Artiste / Directeur
 - **Thatou** — Artiste / Chromatic of Starlight
 - **Crashy** — Charting

@@ -46,6 +46,8 @@ class FreeplayState extends MusicBeatState
 	var scoreBG:FlxSprite;
 	var scoreText:FlxText;
 	var diffText:FlxText;
+	var missesText:FlxText;
+	var rankText:FlxText;
 	var cheatHintText:FlxText;
 	static inline var CHEAT_HINT_MESSAGE:String = 'Type "victoire" on your keyboard to reset the score.';
 	static inline var CHEAT_SUCCESS_MESSAGE:String = 'Reset completed successfully.';
@@ -53,6 +55,8 @@ class FreeplayState extends MusicBeatState
 	var lerpRating:Float = 0;
 	var intendedScore:Int = 0;
 	var intendedRating:Float = 0;
+	var intendedMisses:Int = 0;
+	var intendedRank:String = '';
 
 	private var grpSongs:FlxTypedGroup<Alphabet>;
 	private var curPlaying:Bool = false;
@@ -287,6 +291,17 @@ for (i in 0...WeekData.weeksList.length) {
 		diffText.font = scoreText.font;
 		add(diffText);
 
+		// --- Nombre de misses sur la musique sélectionnée (à droite de la difficulté) ---
+		missesText = new FlxText(scoreText.x, diffText.y, 0, "", 24);
+		missesText.setFormat(Paths.font("vcr.ttf"), 24, FlxColor.WHITE, LEFT);
+		add(missesText);
+
+		// --- Rang obtenu sur la musique sélectionnée (SFC, GFC, etc.), collé à droite ---
+		rankText = new FlxText(scoreText.x, diffText.y, 0, "", 24);
+		rankText.setFormat(Paths.font("vcr.ttf"), 24, FlxColor.WHITE, LEFT);
+		add(rankText);
+		// -----------------------------------------------------
+
 		add(scoreText);
 
 		// --- Message d'astuce pour le cheat code de reset (bas droite) ---
@@ -366,6 +381,57 @@ for (i in 0...WeekData.weeksList.length) {
 		return (!leWeek.startUnlocked && leWeek.weekBefore.length > 0 && (!StoryMenuState.weekCompleted.exists(leWeek.weekBefore) || !StoryMenuState.weekCompleted.get(leWeek.weekBefore)));
 	}
 
+	/**
+	 * Retourne la liste des noms de toutes les chansons actuellement débloquées / accessibles
+	 * en Freeplay, en reproduisant exactement la logique de construction du menu dans create().
+	 * Utilisée par GalleryState pour savoir quelles musiques doivent être complétées avant de
+	 * débloquer la galerie, sans dépendre d'une instance de FreeplayState déjà créée.
+	 */
+	public static function getFreeplaySongNames():Array<String>
+	{
+		var result:Array<String> = [];
+
+		WeekData.reloadWeekFiles(false);
+
+		for (i in 0...WeekData.weeksList.length)
+		{
+			var weekName:String = WeekData.weeksList[i];
+			var leWeek:WeekData = WeekData.weeksLoaded.get(weekName);
+
+			// Même condition de verrouillage que weekIsLocked()
+			var locked:Bool = (!leWeek.startUnlocked && leWeek.weekBefore.length > 0
+				&& (!StoryMenuState.weekCompleted.exists(leWeek.weekBefore) || !StoryMenuState.weekCompleted.get(leWeek.weekBefore)));
+			if (locked) continue;
+
+			// Même condition custom que pour la week cachée ("weekb")
+			if (weekName == WeekbUnlock.HIDDEN_WEEK_NAME)
+			{
+				var savedDifficulties:Array<String> = CoolUtil.difficulties;
+
+				if (WeekData.weeksLoaded.exists("weeka"))
+				{
+					var diffStr:String = WeekData.weeksLoaded.get("weeka").difficulties;
+					var diffs:Array<String> = CoolUtil.defaultDifficulties.copy();
+					if (diffStr != null && diffStr.trim().length > 0)
+						diffs = diffStr.split(",");
+					CoolUtil.difficulties = diffs;
+				}
+
+				var unlocked:Bool = WeekbUnlock.isUnlocked(CoolUtil.difficulties.length);
+				CoolUtil.difficulties = savedDifficulties;
+
+				if (!unlocked) continue;
+			}
+
+			for (song in leWeek.songs)
+			{
+				result.push(song[0]);
+			}
+		}
+
+		return result;
+	}
+
 
 	/*public function addWeek(songs:Array<String>, weekNum:Int, weekColor:Int, ?songCharacters:Array<String>)
 	{
@@ -388,6 +454,7 @@ for (i in 0...WeekData.weeksList.length) {
 	var instNamePlaying:String = ''; // nom de l'inst actuellement en lecture
 	public static var vocals:FlxSound = null;
 	var holdTime:Float = 0;
+	var lastMusicTime:Float = 0; // sert à détecter le bouclage de l'inst (le temps retombe brutalement vers 0)
 
 	// Convertit l'Int en String pour la difficulté
     public static function difficultyToString(diff:Int):String {
@@ -583,6 +650,14 @@ for (i in 0...WeekData.weeksList.length) {
 		}
 
 		scoreText.text = 'PERSONAL BEST: ' + lerpScore + ' (' + ratingSplit.join('.') + '%)';
+
+		missesText.text = 'MISSES: ' + intendedMisses;
+
+		var rankStr:String = intendedRank;
+		if (rankStr == null || rankStr.length == 0)
+			rankStr = '-';
+		rankText.text = 'RANK: ' + rankStr;
+
 		positionHighscore();
 
 		var upP = controls.UI_UP_P;
@@ -711,6 +786,9 @@ if (trackKey != instNamePlaying)
 			PlayState.storyDifficulty = curDifficulty;
 			PlayState.actualSongName = songLowercase; // On mémorise le nom original
 
+			// Nouvelle chanson lancée : le prochain retour au menu principal tirera un nouveau personnage/fond
+			MainMenuState.shouldRerollArtwork = true;
+
 			if(colorTween != null) {
 				colorTween.cancel();
 			}
@@ -731,6 +809,21 @@ if (trackKey != instNamePlaying)
 		// ✅ Synchronisation du Conductor avec la musique
 		if (FlxG.sound.music != null)
 		{
+			// Détecte le bouclage de l'inst (le temps retombe brutalement vers 0
+			// quand FlxSound relance la piste toute seule en fin de lecture).
+			// Sans ça, curStep/curBeat restent bloqués sur leur valeur max et
+			// stepHit()/beatHit() (donc le boop) ne se redéclenchent plus jamais.
+			if (FlxG.sound.music.time < lastMusicTime - 500)
+			{
+				curStep = 0;
+				curBeat = 0;
+				curDecStep = 0;
+				curDecBeat = 0;
+				curSection = 0;
+				stepsToDo = 0;
+			}
+			lastMusicTime = FlxG.sound.music.time;
+
 			Conductor.songPosition = FlxG.sound.music.time;
 		}
 
@@ -802,6 +895,8 @@ function getDifficultiesForWeek(week:WeekData):Array<String>
 		#if !switch
 		intendedScore = Highscore.getScore(songs[curSelected].songName, curDifficulty);
 		intendedRating = Highscore.getRating(songs[curSelected].songName, curDifficulty);
+		intendedMisses = Highscore.getMisses(songs[curSelected].songName, curDifficulty);
+		intendedRank = Highscore.getRank(songs[curSelected].songName, curDifficulty);
 		#end
 
 		PlayState.storyDifficulty = curDifficulty;
@@ -839,6 +934,8 @@ function getDifficultiesForWeek(week:WeekData):Array<String>
 			#if !switch
 			intendedScore = Highscore.getScore(songs[curSelected].songName, curDifficulty);
 			intendedRating = Highscore.getRating(songs[curSelected].songName, curDifficulty);
+			intendedMisses = Highscore.getMisses(songs[curSelected].songName, curDifficulty);
+			intendedRank = Highscore.getRank(songs[curSelected].songName, curDifficulty);
 			#end
 
 			FlxG.sound.play(Paths.sound('victoire'), 0.4);
@@ -904,6 +1001,8 @@ function getDifficultiesForWeek(week:WeekData):Array<String>
 		#if !switch
 		intendedScore = Highscore.getScore(songs[curSelected].songName, curDifficulty);
 		intendedRating = Highscore.getRating(songs[curSelected].songName, curDifficulty);
+		intendedMisses = Highscore.getMisses(songs[curSelected].songName, curDifficulty);
+		intendedRank = Highscore.getRank(songs[curSelected].songName, curDifficulty);
 		#end
 
 		var bullShit:Int = 0;
@@ -974,8 +1073,21 @@ function getDifficultiesForWeek(week:WeekData):Array<String>
 
 		scoreBG.scale.x = FlxG.width - scoreText.x + 6;
 		scoreBG.x = FlxG.width - (scoreBG.scale.x / 2);
+
 		diffText.x = Std.int(scoreBG.x + (scoreBG.width / 2));
 		diffText.x -= diffText.width / 2;
+
+		// Misses + Rank centrés ensemble (comme un seul bloc) sous diffText,
+		// et décalés plus bas verticalement.
+		var gap:Float = 20; // espace entre "MISSES: x" et "RANK: y"
+		var groupWidth:Float = missesText.width + gap + rankText.width;
+		var groupStartX:Float = scoreBG.x + (scoreBG.width / 2) - (groupWidth / 2);
+
+		missesText.x = groupStartX;
+		rankText.x = groupStartX + missesText.width + gap;
+
+		missesText.y = diffText.y + diffText.height + 6; // "+6" = petit espace vertical
+		rankText.y = missesText.y;
 	}
 }
 

@@ -3388,7 +3388,23 @@ if (OpenFlAssets.exists(file)) {
 				// note n'a encore été jouée).
 				totalPlayed = Std.int(Math.max(totalPlayed, 1));
 				totalNotesHit = totalPlayed;
+				songMisses = 0;
+
+				// Score placeholder, à remplacer par une vraie valeur si besoin.
+				songScore = 100000;
+
+				// Recalcule proprement ratingPercent, ratingName et ratingFC
+				// à partir des valeurs ci-dessus, et rafraîchit le HUD via
+				// updateScore() (RecalculateRating() fait tout ça en interne).
+				RecalculateRating();
+
+				// Filet de sécurité : si RecalculateRating() ne donne toujours pas
+				// 100% (ex: script Lua du chart qui intercepte onRecalculateRating
+				// et retourne Function_Stop), on force les valeurs à la main.
 				ratingPercent = 1;
+				ratingName = ratingStuff[ratingStuff.length - 1][0]; // meilleur rang dispo
+				ratingFC = "S+";
+				updateScore();
 
 				// Supprime les notes restantes pour éviter toute perte de vie
 				// résiduelle au moment de terminer la chanson.
@@ -3936,7 +3952,7 @@ if (SONG.validScore)
 				var saveName:String = actualSongName != "" ? actualSongName : SONG.song;
 				if (isStoryMode) saveName = storyPlaylist[0]; // Sécurité pour le mode histoire
 				
-				Highscore.saveScore(saveName, songScore, storyDifficulty, percent);
+				Highscore.saveScore(saveName, songScore, storyDifficulty, percent, songMisses, ratingFC);
 				// -------------------------
 				#end
 			}
@@ -4542,13 +4558,14 @@ if (SONG.validScore)
 			{
 				gf.playAnim('sad');
 			}
-			combo = 0;
+			// combo = 0; // Ghost tap: on ne casse plus le combo, comme dans le jeu de base
 
 			if(!practiceMode) songScore -= 10;
-			if(!endingSong) {
-				songMisses++;
-			}
-			totalPlayed++;
+			// Ghost tap: ne compte plus comme miss ni n'affecte l'accuracy (comme dans le jeu de base)
+			// if(!endingSong) {
+			// 	songMisses++;
+			// }
+			// totalPlayed++;
 			RecalculateRating(true);
 
 			FlxG.sound.play(Paths.soundRandom('missnote', 1, 3), FlxG.random.float(0.1, 0.2));
@@ -5208,13 +5225,20 @@ if (SONG.validScore)
 				}
 			}
 
-			// Rating FC
-			ratingFC = "";
-			if (sicks > 0) ratingFC = "SFC";
-			if (goods > 0) ratingFC = "GFC";
-			if (bads > 0 || shits > 0) ratingFC = "FC";
-			if (songMisses > 0 && songMisses < 10) ratingFC = "SDCB";
-			else if (songMisses >= 10) ratingFC = "Clear";
+			// Rating Rank (based on accuracy)
+			if(totalPlayed < 1)
+				ratingFC = "?";
+			else
+			{
+				var accForRank:Float = ratingPercent * 100;
+				if (accForRank >= 100) ratingFC = "S+";
+				else if (accForRank >= 95) ratingFC = "S";
+				else if (accForRank >= 90) ratingFC = "A";
+				else if (accForRank >= 80) ratingFC = "B";
+				else if (accForRank >= 70) ratingFC = "C";
+				else if (accForRank >= 50) ratingFC = "E";
+				else ratingFC = "F";
+			}
 		}
 		updateScore(badHit); // score will only update after rating is calculated, if it's a badHit, it shouldn't bounce -Ghost
 		setOnLuas('rating', ratingPercent);

@@ -41,6 +41,67 @@ class CreditsState extends MusicBeatState
 
 	var offsetThing:Float = -75;
 
+	// --- Source de référence des crédits (Nom - Icône - Description - Lien - Couleur BG) ---
+	// C'est ICI, et uniquement ici, que les auteurs sont déclarés. GalleryState (et tout
+	// autre state) vient interroger cette liste via findCredit() au lieu de la dupliquer.
+	public static var creditsList:Array<Array<String>> = [ //Name - Icon name - Description - Link - BG Color
+		["Multivers' Crew"],
+		['Dorix',		'dorix',			"Artist, composer, coder, charter, and many things",							'https://www.youtube.com/@Dorix_444',			'07cd00'],
+		['Nanza',		'nanza',			"Programmer, Composer",				'https://github.com/Nazuz72debug',				'1f4a99'],
+		['CrashyJuny',	'crashyjuny',		"Charter, Coder",			'',												'2e74ff'],
+		['Vastor',		'vastor',			"Charter, Coder",			'https://www.youtube.com/@Vastor6624',			'ac27ff'],
+		['Thatou',		'thatou',			"Voice acting, Artist",			'https://www.youtube.com/@Thatou0_0',			'ff00ff'],
+		[''],
+		["Special Thanks"],
+		['Spectros_',         	'spectros',        	"Helped create some freeplay artwork", 	'https://guns.lol/alyaska_fr',                    'cecece'],
+		['TechnoBoy Musics',    	'technoboy',    	"Composer of New Game",                                         	'https://www.youtube.com/@OM%C3%BAsicoCriativo1950',     '2e74ff'],
+		['Thedumbestcat',    	'cat',    	"Composer, Coder, Mod idea of the original mod ''FNF : Vs Emmanuel Macron''",             'https://gamebanana.com/members/1794038',     '2e74ff'],
+		['Sage',    	'sage',    	"Artist, Animator, Charter of the original mod ''FNF : Vs Emmanuel Macron''",             'https://gamebanana.com/members/2186896',     '2e74ff'],
+		['SilvaGunner',         	'silva',        	"Made Dad Battle (In-Game Version) / Original by Kawai Sprite", 	'https://www.youtube.com/@SiIvaGunner',                    'cecece'],
+		['Team Salvato',        	'salvato',      	"Creator of Doki Doki Literature Club!",                         	'https://teamsalvato.com',								   'f891ff'],
+		['Masahiro Sakurai', 	'sakurai', 	"Creator of Super Smash Bros.",                                		'https://www.youtube.com/@sora_sakurai_en',                            'ff5900'],
+		[''],
+		["Funkin' Crew"],
+		['ninjamuffin99',		'ninjamuffin99',	"Programmer of Friday Night Funkin'",							'https://twitter.com/ninja_muffin99',	'CF2D2D'],
+		['PhantomArcade',		'phantomarcade',	"Animator of Friday Night Funkin'",								'https://twitter.com/PhantomArcade3K',	'FADC45'],
+		['evilsk8r',			'evilsk8r',			"Artist of Friday Night Funkin'",								'https://twitter.com/evilsk8r',			'5ABD4B'],
+		['kawaisprite',			'kawaisprite',		"Composer of Friday Night Funkin'",								'https://twitter.com/kawaisprite',		'378FC7'],
+	];
+
+	/**
+	 * Recherche un crédit par nom d'auteur (insensible à la casse).
+	 * Retourne null si aucun auteur ne correspond, ou si l'entrée trouvée
+	 * est un séparateur/titre de section (ex: ["MCollection"]).
+	 */
+	public static function findCredit(name:String):Array<String>
+	{
+		if (name == null || name.length <= 0) return null;
+		for (entry in creditsList)
+		{
+			if (entry.length > 1 && entry[0] != null && entry[0].toLowerCase() == name.toLowerCase())
+			{
+				return entry;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Convertit une couleur hexadécimale de crédit (ex: '6101c1', sans alpha)
+	 * en Int FlxColor complet (0xFFxxxxxx). Centralisé ici pour rester cohérent
+	 * avec getCurrentBGColor().
+	 */
+	public static function parseColor(hex:String):Int
+	{
+		if (hex == null) return FlxColor.WHITE;
+		var bgColor:String = hex;
+		if (!bgColor.startsWith('0x'))
+		{
+			bgColor = '0xFF' + bgColor;
+		}
+		return Std.parseInt(bgColor);
+	}
+
 	override function create()
 	{
 		#if desktop
@@ -49,9 +110,13 @@ class CreditsState extends MusicBeatState
 		#end
 
 		persistentUpdate = true;
-		bg = new FlxSprite().loadGraphic(Paths.image('menucolor'));
+		// Même fond que celui affiché derrière le personnage dans le menu principal (mis en cache par MainMenuState)
+		bg = new FlxSprite().loadGraphic(Paths.image(MainMenuState.lastBgGraphicPath));
 		add(bg);
 		bg.screenCenter();
+
+// Ajoute automatiquement les particules (cœurs et/ou cristaux) selon le personnage en cache
+		MainMenuState.addMenuParticles(this);
 		
 		grpOptions = new FlxTypedGroup<Alphabet>();
 		add(grpOptions);
@@ -84,31 +149,7 @@ class CreditsState extends MusicBeatState
 		}
 		#end
 
-		var pisspoop:Array<Array<String>> = [ //Name - Icon name - Description - Link - BG Color
-			["MCollection"],
-			['Dorix',		'dorix',			"Director (Artist, composer, coder, charter, and many things)",							'https://www.youtube.com/@Dorix_444',			'6101c1'],
-			['Nazu',		'nazu',				"Programmer, Composer",				'https://github.com/Nazuz72debug',				'1f4a99'],
-			['CrashyJuny',	'crashyjuny',		"Charter, Coder",			'',												'2e74ff'],
-			['Vastor',		'vastor',			"Charter, Coder",			'https://www.youtube.com/@Vastor6624',			'ac27ff'],
-			['Thatou',		'thatou',			"Voice acting, Artist",			'https://www.youtube.com/@Thatou0_0',			'ff00ff'],
-			[''],
-			["Special Thanks"],
-			['Spectros_',         	'spectros',        	"Helped create some freeplay artwork", 	'https://guns.lol/alyaska_fr',                    'cecece'],
-			['TechnoBoy Musics',    	'technoboy',    	"Composer of New Game",                                         	'https://www.youtube.com/@OM%C3%BAsicoCriativo1950',     '2e74ff'],
-			['Thedumbestcat',    	'cat',    	"Composer, Coder, Mod idea of the original mod ''FNF : Vs Emmanuel Macron''",             'https://gamebanana.com/members/1794038',     '2e74ff'],
-			['Sage',    	'sage',    	"Artist, Animator, Charter of the original mod ''FNF : Vs Emmanuel Macron''",             'https://gamebanana.com/members/2186896',     '2e74ff'],
-			['SilvaGunner',         	'silva',        	"Made Dad Battle (In-Game Version) / Original by Kawai Sprite", 	'https://www.youtube.com/@SiIvaGunner',                    'cecece'],
-			['Team Salvato',        	'salvato',      	"Creator of Doki Doki Literature Club!",                         	'https://teamsalvato.com',								   'f891ff'],
-			['Masahiro Sakurai', 	'sakurai', 	"Creator of Super Smash Bros.",                                		'https://www.youtube.com/@sora_sakurai_en',                            'ff5900'],
-			[''],
-			["Funkin' Crew"],
-			['ninjamuffin99',		'ninjamuffin99',	"Programmer of Friday Night Funkin'",							'https://twitter.com/ninja_muffin99',	'CF2D2D'],
-			['PhantomArcade',		'phantomarcade',	"Animator of Friday Night Funkin'",								'https://twitter.com/PhantomArcade3K',	'FADC45'],
-			['evilsk8r',			'evilsk8r',			"Artist of Friday Night Funkin'",								'https://twitter.com/evilsk8r',			'5ABD4B'],
-			['kawaisprite',			'kawaisprite',		"Composer of Friday Night Funkin'",								'https://twitter.com/kawaisprite',		'378FC7'],
-		];
-		
-		for(i in pisspoop){
+		for(i in creditsList){
 			creditsStuff.push(i);
 		}
 	
@@ -316,11 +357,7 @@ class CreditsState extends MusicBeatState
 	#end
 
 	function getCurrentBGColor() {
-		var bgColor:String = creditsStuff[curSelected][4];
-		if(!bgColor.startsWith('0x')) {
-			bgColor = '0xFF' + bgColor;
-		}
-		return Std.parseInt(bgColor);
+		return parseColor(creditsStuff[curSelected][4]);
 	}
 
 	private function unselectableCheck(num:Int):Bool {

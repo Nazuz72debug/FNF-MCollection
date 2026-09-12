@@ -64,13 +64,17 @@ class OptionsState extends MusicBeatState
 		DiscordClient.changePresence("Options Menu", null);
 		#end
 
-		var bg:FlxSprite = new FlxSprite().loadGraphic(Paths.image('menuDesat'));
+		// Même fond que celui affiché derrière le personnage dans le menu principal (mis en cache par MainMenuState)
+		var bg:FlxSprite = new FlxSprite().loadGraphic(Paths.image(MainMenuState.lastBgGraphicPath));
 		bg.color = 0xFFea71fd;
 		bg.updateHitbox();
 
 		bg.screenCenter();
 		bg.antialiasing = ClientPrefs.globalAntialiasing;
 		add(bg);
+
+// Ajoute automatiquement les particules (cœurs et/ou cristaux) selon le personnage en cache
+		MainMenuState.addMenuParticles(this);
 
 		grpOptions = new FlxTypedGroup<Alphabet>();
 		add(grpOptions);
